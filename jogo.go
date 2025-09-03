@@ -28,6 +28,7 @@ var (
 	Inimigo    = Elemento{'☠', CorVermelho, CorPadrao, true}
 	Parede     = Elemento{'▤', CorParede, CorFundoParede, true}
 	Vegetacao  = Elemento{'♣', CorVerde, CorPadrao, false}
+	Powerup    = Elemento{'★', CorAmarela, CorPadrao, false}
 	Vazio      = Elemento{' ', CorPadrao, CorPadrao, false}
 )
 
@@ -60,6 +61,8 @@ func jogoCarregarMapa(nome string, jogo *Jogo) error {
 				e = Inimigo
 			case Vegetacao.simbolo:
 				e = Vegetacao
+			case Powerup.simbolo:
+				e = Powerup
 			case Personagem.simbolo:
 				jogo.PosX, jogo.PosY = x, y // registra a posição inicial do personagem
 			}
