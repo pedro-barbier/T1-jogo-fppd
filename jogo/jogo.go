@@ -8,18 +8,24 @@ import (
 
 // Elemento representa qualquer objeto do mapa (parede, personagem, vegetação, etc)
 type Elemento struct {
-	simbolo   rune
-	cor       Cor
-	corFundo  Cor
-	tangivel  bool // Indica se o elemento bloqueia passagem
+	simbolo  rune
+	cor      Cor
+	corFundo Cor
+	tangivel bool // Indica se o elemento bloqueia passagem
 }
 
 // Jogo contém o estado atual do jogo
 type Jogo struct {
-	Mapa            [][]Elemento // grade 2D representando o mapa
-	PosX, PosY      int          // posição atual do personagem
-	UltimoVisitado  Elemento     // elemento que estava na posição do personagem antes de mover
-	StatusMsg       string       // mensagem para a barra de status
+	Mapa           [][]Elemento // grade 2D representando o mapa
+	StatusMsg      string       // mensagem para a barra de status
+	PosX, PosY     int          // posição atual do personagem
+	UltimoVisitado Elemento     // elemento que estava na posição do personagem antes de mover
+}
+
+type EntityInimigo struct {
+	PosX, PosY     int // posição atual do inimigo
+	Vivo           bool
+	UltimoVisitado Elemento // elemento que estava na posição do inimigo antes de mover
 }
 
 // Elementos visuais do jogo
@@ -27,8 +33,12 @@ var (
 	Personagem = Elemento{'☺', CorCinzaEscuro, CorPadrao, true}
 	Inimigo    = Elemento{'☠', CorVermelho, CorPadrao, true}
 	Parede     = Elemento{'▤', CorParede, CorFundoParede, true}
+	Parede2    = Elemento{'░', CorParede, CorPadrao, true}
 	Vegetacao  = Elemento{'♣', CorVerde, CorPadrao, false}
 	Powerup    = Elemento{'★', CorAmarela, CorPadrao, false}
+	Coracao    = Elemento{'♥', CorVermelho, CorPadrao, true}
+	Tiro       = Elemento{'✳', CorRoxa, CorPadrao, true}
+	Zero       = Elemento{'0', CorTexto, CorPadrao, true}
 	Vazio      = Elemento{' ', CorPadrao, CorPadrao, false}
 )
 
@@ -57,12 +67,18 @@ func jogoCarregarMapa(nome string, jogo *Jogo) error {
 			switch ch {
 			case Parede.simbolo:
 				e = Parede
+			case Parede2.simbolo:
+				e = Parede2
 			case Inimigo.simbolo:
 				e = Inimigo
 			case Vegetacao.simbolo:
 				e = Vegetacao
 			case Powerup.simbolo:
 				e = Powerup
+			case Coracao.simbolo:
+				e = Coracao
+			case Zero.simbolo:
+				e = Zero
 			case Personagem.simbolo:
 				jogo.PosX, jogo.PosY = x, y // registra a posição inicial do personagem
 			}
@@ -105,7 +121,7 @@ func jogoMoverElemento(jogo *Jogo, x, y, dx, dy int) {
 	// Obtem elemento atual na posição
 	elemento := jogo.Mapa[y][x] // guarda o conteúdo atual da posição
 
-	jogo.Mapa[y][x] = jogo.UltimoVisitado     // restaura o conteúdo anterior
-	jogo.UltimoVisitado = jogo.Mapa[ny][nx]   // guarda o conteúdo atual da nova posição
-	jogo.Mapa[ny][nx] = elemento              // move o elemento
+	jogo.Mapa[y][x] = jogo.UltimoVisitado   // restaura o conteúdo anterior
+	jogo.UltimoVisitado = jogo.Mapa[ny][nx] // guarda o conteúdo atual da nova posição
+	jogo.Mapa[ny][nx] = elemento            // move o elemento
 }
