@@ -3,7 +3,10 @@ package main
 
 import (
 	"bufio"
+	"fmt"
+	"math/rand"
 	"os"
+	"time"
 )
 
 // Elemento representa qualquer objeto do mapa (parede, personagem, vegetação, etc)
@@ -91,6 +94,30 @@ func jogoCarregarMapa(nome string, jogo *Jogo) error {
 		return err
 	}
 	return nil
+}
+
+func jogoSpawnPowerUp(jogo *Jogo, ch chan bool, lock chan struct{}) {
+	r := rand.New(rand.NewSource(time.Now().UnixNano()))
+	x, y := 0, 0
+
+	for {
+		y = r.Intn(30)
+		x = r.Intn(83)
+		if jogo.Mapa[y][x] == Vazio {
+			<-lock
+			jogo.Mapa[y][x] = Powerup
+			lock <- struct{}{}
+			break
+		}
+	}
+	select {
+	case <-ch:
+		fmt.Print("Pegou PowerUp")
+	case <-time.After(10 * time.Second):
+		<-lock
+		jogo.Mapa[y][x] = Vazio
+		lock <- struct{}{}
+	}
 }
 
 // Verifica se o personagem pode se mover para a posição (x, y)

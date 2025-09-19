@@ -1,7 +1,10 @@
 // main.go - Loop principal do jogo
 package main
 
-import "os"
+import (
+	"os"
+	"time"
+)
 
 func main() {
 	// Inicializa a interface (termbox)
@@ -28,6 +31,16 @@ func main() {
 
 	direcao := make(chan string, 1)
 	direcao <- "Default"
+
+	lim := make(chan struct{}, 1)
+	timeout := make(chan bool)
+
+	go func() {
+		for {
+			time.Sleep(15 * time.Second)
+			lim <- struct{}{}
+		}
+	}()
 	// Loop principal de entrada
 	for {
 		evento := interfaceLerEventoTeclado()
@@ -35,6 +48,13 @@ func main() {
 		if !continuar {
 			break
 		}
+
+		select {
+		case <-lim:
+			go jogoSpawnPowerUp(&jogo, timeout, lock)
+		default:
+		}
+
 		<-lock
 		interfaceDesenharJogo(&jogo)
 		lock <- struct{}{}
