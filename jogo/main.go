@@ -23,12 +23,20 @@ func main() {
 	// Desenha o estado inicial do jogo
 	interfaceDesenharJogo(&jogo)
 
+	lock := make(chan struct{}, 1)
+	lock <- struct{}{}
+
+	direcao := make(chan string, 1)
+	direcao <- "Default"
 	// Loop principal de entrada
 	for {
 		evento := interfaceLerEventoTeclado()
-		if continuar := personagemExecutarAcao(evento, &jogo); !continuar {
+		continuar := personagemExecutarAcao(evento, direcao, &jogo, lock)
+		if !continuar {
 			break
 		}
+		<-lock
 		interfaceDesenharJogo(&jogo)
+		lock <- struct{}{}
 	}
 }
