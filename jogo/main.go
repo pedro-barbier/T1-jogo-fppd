@@ -26,32 +26,45 @@ func main() {
 	// Desenha o estado inicial do jogo
 	interfaceDesenharJogo(&jogo)
 
+	// Canais para sincronização e comunicação entre goroutines
 	lock := make(chan struct{}, 1)
 	lock <- struct{}{}
 
 	direcao := make(chan string, 1)
 	direcao <- "Default"
 
-	lim := make(chan struct{}, 1)
+	limPowerup := make(chan struct{}, 1)
+	limInimigo := make(chan struct{}, 1)
+	dano_confirmation := make(chan bool, 1)
 	timeout := make(chan bool)
 
+	// Goroutine para spawnar power-ups periodicamente
 	go func() {
 		for {
 			time.Sleep(15 * time.Second)
-			lim <- struct{}{}
+			limPowerup <- struct{}{}
+		}
+	}()
+
+	go func() {
+		for {
+			time.Sleep(5 * time.Second)
+			limInimigo <- struct{}{}
 		}
 	}()
 	// Loop principal de entrada
 	for {
 		evento := interfaceLerEventoTeclado()
-		continuar := personagemExecutarAcao(evento, direcao, &jogo, lock)
+		continuar := personagemExecutarAcao(&jogo, evento, direcao, lock)
 		if !continuar {
 			break
 		}
 
 		select {
-		case <-lim:
+		case <-limPowerup:
 			go jogoSpawnPowerUp(&jogo, timeout, lock)
+		case <-limInimigo:
+			go jogoSpawnInimigo(&jogo, dano_confirmation, lock)
 		default:
 		}
 

@@ -25,12 +25,6 @@ type Jogo struct {
 	UltimoVisitado Elemento     // elemento que estava na posição do personagem antes de mover
 }
 
-type EntityInimigo struct {
-	PosX, PosY     int // posição atual do inimigo
-	Vivo           bool
-	UltimoVisitado Elemento // elemento que estava na posição do inimigo antes de mover
-}
-
 // Elementos visuais do jogo
 var (
 	Personagem = Elemento{'☺', CorCinzaEscuro, CorPadrao, true}
@@ -96,7 +90,7 @@ func jogoCarregarMapa(nome string, jogo *Jogo) error {
 	return nil
 }
 
-func jogoSpawnPowerUp(jogo *Jogo, ch chan bool, lock chan struct{}) {
+func jogoSpawnPowerUp(jogo *Jogo, timeout chan bool, lock chan struct{}) {
 	r := rand.New(rand.NewSource(time.Now().UnixNano()))
 	x, y := 0, 0
 
@@ -106,17 +100,109 @@ func jogoSpawnPowerUp(jogo *Jogo, ch chan bool, lock chan struct{}) {
 		if jogo.Mapa[y][x] == Vazio {
 			<-lock
 			jogo.Mapa[y][x] = Powerup
+			interfaceDesenharJogo(jogo)
 			lock <- struct{}{}
 			break
 		}
 	}
 	select {
-	case <-ch:
+	case <-timeout:
 		fmt.Print("Pegou PowerUp")
 	case <-time.After(10 * time.Second):
 		<-lock
 		jogo.Mapa[y][x] = Vazio
+		interfaceDesenharJogo(jogo)
 		lock <- struct{}{}
+	}
+}
+
+func jogoSpawnInimigo(jogo *Jogo, danoConfirmation chan bool, lock chan struct{}) {
+	r := rand.New(rand.NewSource(time.Now().UnixNano()))
+	side := r.Intn(4)
+
+	pos_spawns_y, pos_spawns_x := 0, 0
+	x, y := 0, 0
+
+	// Define a posição inicial do inimigo com base no lado sorteado
+spawnLoop:
+	for {
+		pos_spawns_y = r.Intn(4) + 13
+		pos_spawns_x = r.Intn(16) + 35
+		switch side {
+		case 0: // Top
+			if jogo.Mapa[1][pos_spawns_x] == Vazio {
+				<-lock
+				jogo.Mapa[1][pos_spawns_x] = Inimigo
+				interfaceDesenharJogo(jogo)
+				lock <- struct{}{}
+				y = 1
+				x = pos_spawns_x
+				break spawnLoop
+			}
+		case 1: // Right
+			if jogo.Mapa[pos_spawns_y][81] == Vazio {
+				<-lock
+				jogo.Mapa[pos_spawns_y][81] = Inimigo
+				interfaceDesenharJogo(jogo)
+				lock <- struct{}{}
+				y = pos_spawns_y
+				x = 81
+				break spawnLoop
+			}
+		case 2: // Bottom
+			if jogo.Mapa[29][pos_spawns_x] == Vazio {
+				<-lock
+				jogo.Mapa[29][pos_spawns_x] = Inimigo
+				interfaceDesenharJogo(jogo)
+				lock <- struct{}{}
+				y = 29
+				x = pos_spawns_x
+				break spawnLoop
+			}
+		case 3: // Left
+			if jogo.Mapa[pos_spawns_y][1] == Vazio {
+				<-lock
+				jogo.Mapa[pos_spawns_y][1] = Inimigo
+				interfaceDesenharJogo(jogo)
+				lock <- struct{}{}
+				y = pos_spawns_y
+				x = 1
+				break spawnLoop
+			}
+		}
+	}
+
+	// Move o inimigo em direção ao personagem
+	for {
+		time.Sleep(500 * time.Millisecond)
+		dx, dy := 0, 0
+		if jogo.PosX > x {
+			dx = 1
+		} else if jogo.PosX < x {
+			dx = -1
+		} else if jogo.PosY > y {
+			dy = 1
+		} else if jogo.PosY < y {
+			dy = -1
+		}
+		if jogo.Mapa[y][x] != Inimigo {
+			break
+		}
+		if jogo.Mapa[y+dy][x+dx] == Personagem {
+			<-lock
+			jogo.Mapa[y][x] = Vazio
+			interfaceDesenharJogo(jogo)
+			lock <- struct{}{}
+			danoConfirmation <- true
+			break
+		}
+		<-lock
+		jogo.Mapa[y+dy][x+dx] = Inimigo
+		jogo.Mapa[y][x] = Vazio
+		interfaceDesenharJogo(jogo)
+		lock <- struct{}{}
+		y += dy
+		x += dx
 	}
 }
 
