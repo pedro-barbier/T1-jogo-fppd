@@ -12,7 +12,7 @@ func inimigoSpawnar(jogo *Jogo, damage_confirmation chan bool, lock chan struct{
 	pos_spawns_y, pos_spawns_x := 0, 0
 	x, y := 0, 0
 
-	// Define a posição inicial do inimigo com base no lado sorteado
+	// Define a posição inicial do inimigo com base no lado e posição sorteado
 spawnLoop:
 	for {
 		pos_spawns_y = r.Intn(4) + 13
@@ -66,6 +66,8 @@ spawnLoop:
 		px, py := jogo.PosX, jogo.PosY
 
 		time.Sleep(500 * time.Millisecond)
+
+		// Calcula a direção do movimento em direção ao personagem
 		dx, dy := 0, 0
 		if px > x && jogo.Mapa[y][x+1] != Parede && jogo.Mapa[y][x-1] != Inimigo && jogo.Mapa[y][x-1] != Tiro {
 			dx = 1
@@ -80,6 +82,7 @@ spawnLoop:
 			break
 		}
 
+		// Verifica se o inimigo atingiu o personagem
 		if y+dy == py && x+dx == px {
 			<-lock
 			jogo.Mapa[y][x] = Vazio
@@ -90,12 +93,14 @@ spawnLoop:
 			break
 		}
 
+		// Move o inimigo para a nova posição
 		<-lock
 		jogo.Mapa[y+dy][x+dx] = Inimigo
 		jogo.Mapa[y][x] = Vazio
 		interfaceDesenharJogo(jogo)
 		lock <- struct{}{}
 
+		// Atualiza a posição atual do inimigo
 		y += dy
 		x += dx
 	}

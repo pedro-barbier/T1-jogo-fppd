@@ -1,14 +1,13 @@
 package main
 
-import (
-	"time"
-)
-
 func vidaAdm(jogo *Jogo, heal_confirmation chan bool, damage_confirmation chan bool, gameOver chan bool, lock chan struct{}) {
 	vida := 3
+
+	// Loop principal de administração da vida do personagem
 	for {
 		select {
 		case cura := <-heal_confirmation:
+			// Cura o personagem se ele não estiver com vida cheia
 			if cura && vida < 3 {
 				vida++
 				switch vida {
@@ -28,6 +27,7 @@ func vidaAdm(jogo *Jogo, heal_confirmation chan bool, damage_confirmation chan b
 			}
 
 		case dano := <-damage_confirmation:
+			// Aplica dano ao personagem e verifica se ele morreu
 			if dano {
 				vida--
 				switch vida {
@@ -49,7 +49,6 @@ func vidaAdm(jogo *Jogo, heal_confirmation chan bool, damage_confirmation chan b
 					jogo.StatusMsg = "Você morreu! Fim de jogo."
 					interfaceDesenharJogo(jogo)
 					lock <- struct{}{}
-					time.Sleep(2 * time.Second)
 					gameOver <- true
 					return
 				}
