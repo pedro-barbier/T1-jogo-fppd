@@ -1,3 +1,5 @@
+Projeto feito por Pedro Henrique Barbieri
+
 ## Jogo de Terminal em Go
 
 # Requisitos mínimos de concorrência e sincronização aplicados:
