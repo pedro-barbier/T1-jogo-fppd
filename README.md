@@ -1,6 +1,41 @@
-Projeto feito por Pedro Henrique Barbieri
+Projeto feito por Marcelo Veiga Neves e Pedro Henrique Barbieri
 
 ## Jogo de Terminal em Go
+
+# Como compilar
+
+1. Instale o Go
+2. Inicialize um novo módulo "jogo":
+
+```bash
+go mod init jogo
+go get -u github.com/nsf/termbox-go
+```
+
+3. Compile o programa:
+
+Linux:
+
+```bash
+go build -o jogo
+```
+
+Windows:
+
+```bash
+go build -o jogo.exe
+```
+
+Também é possivel compilar o projeto usando o comando `make` no Linux ou o script `build.bat` no Windows.
+
+## Como executar
+
+1. Certifique-se de ter o arquivo `mapa.txt` com um mapa válido.
+2. Execute o programa no termimal ou pelo `jogo.exe` no Windows:
+
+```bash
+./jogo
+```
 
 # Requisitos mínimos de concorrência e sincronização aplicados:
 
