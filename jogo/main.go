@@ -33,39 +33,35 @@ func main() {
 	direcao := make(chan string, 1)
 	direcao <- "Default"
 
-	limPowerup := make(chan struct{}, 1)
-	limInimigo := make(chan struct{}, 1)
-	dano_confirmation := make(chan bool, 1)
-	timeout := make(chan bool)
+	damage_confirmation := make(chan bool, 5)
+	heal_confirmation := make(chan bool, 5)
+	gameOver := make(chan bool, 1)
+	timeout := make(chan struct{}, 1)
 
+	// Goroutine para administrar vida do personagem
+	go vidaAdm(&jogo, heal_confirmation, damage_confirmation, gameOver, lock)
 	// Goroutine para spawnar power-ups periodicamente
 	go func() {
 		for {
 			time.Sleep(15 * time.Second)
-			limPowerup <- struct{}{}
+			go powerUpSpawnar(&jogo, timeout, heal_confirmation, lock)
 		}
 	}()
 
+	// Goroutine para spawnar inimigos periodicamente
 	go func() {
 		for {
-			time.Sleep(5 * time.Second)
-			limInimigo <- struct{}{}
+			time.Sleep(2 * time.Second)
+			go inimigoSpawnar(&jogo, damage_confirmation, lock)
 		}
 	}()
+
 	// Loop principal de entrada
 	for {
 		evento := interfaceLerEventoTeclado()
-		continuar := personagemExecutarAcao(&jogo, evento, direcao, lock)
-		if !continuar {
+		continuar := personagemExecutarAcao(&jogo, evento, direcao, timeout, lock)
+		if !continuar || len(gameOver) > 0 {
 			break
-		}
-
-		select {
-		case <-limPowerup:
-			go jogoSpawnPowerUp(&jogo, timeout, lock)
-		case <-limInimigo:
-			go jogoSpawnInimigo(&jogo, dano_confirmation, lock)
-		default:
 		}
 
 		<-lock

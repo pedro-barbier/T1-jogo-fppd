@@ -7,7 +7,7 @@ import (
 )
 
 // Atualiza a posição do personagem com base na tecla pressionada (WASD)
-func personagemMover(jogo *Jogo, tecla rune, direcao chan (string), lock chan struct{}) {
+func personagemMover(jogo *Jogo, tecla rune, direcao chan (string), timeout chan struct{}, lock chan struct{}) {
 	dx, dy := 0, 0
 	switch tecla {
 	case 'w':
@@ -37,7 +37,12 @@ func personagemMover(jogo *Jogo, tecla rune, direcao chan (string), lock chan st
 		lock <- struct{}{}
 	}
 	if jogo.UltimoVisitado == Powerup {
-		jogo.StatusMsg = "Power-up coletado!"
+		<-lock
+		jogo.UltimoVisitado = Vazio
+		jogo.StatusMsg = "Você coletou um power-up! Vida restaurada."
+		interfaceDesenharJogo(jogo)
+		lock <- struct{}{}
+		timeout <- struct{}{}
 	}
 }
 
@@ -46,6 +51,9 @@ func personagemMover(jogo *Jogo, tecla rune, direcao chan (string), lock chan st
 // Você pode expandir essa função para incluir lógica de interação com objetos
 func personagemAtirar(jogo *Jogo, direcao chan (string), lock chan struct{}) {
 	// Atualmente apenas exibe uma mensagem de status
+	<-lock
+	jogo.StatusMsg = fmt.Sprintf("Atirando em (%d, %d)", jogo.PosX, jogo.PosY)
+	lock <- struct{}{}
 	x, y := jogo.PosX, jogo.PosY
 	x_ant, y_ant := x, y
 	dir := <-direcao
@@ -107,11 +115,10 @@ func personagemAtirar(jogo *Jogo, direcao chan (string), lock chan struct{}) {
 		}
 		i++
 	}
-	jogo.StatusMsg = fmt.Sprintf("Interagindo em (%d, %d)", jogo.PosX, jogo.PosY)
 }
 
 // Processa o evento do teclado e executa a ação correspondente
-func personagemExecutarAcao(jogo *Jogo, ev EventoTeclado, direcao chan string, lock chan struct{}) bool {
+func personagemExecutarAcao(jogo *Jogo, ev EventoTeclado, direcao chan string, timeout chan struct{}, lock chan struct{}) bool {
 	switch ev.Tipo {
 	case "sair":
 		// Retorna false para indicar que o jogo deve terminar
@@ -122,7 +129,7 @@ func personagemExecutarAcao(jogo *Jogo, ev EventoTeclado, direcao chan string, l
 
 	case "mover":
 		// Move o personagem com base na tecla
-		personagemMover(jogo, ev.Tecla, direcao, lock)
+		personagemMover(jogo, ev.Tecla, direcao, timeout, lock)
 	}
 	return true // Continua o jogo
 }
