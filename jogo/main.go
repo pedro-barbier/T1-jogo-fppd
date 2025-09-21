@@ -51,7 +51,7 @@ func main() {
 	// Goroutine para spawnar inimigos periodicamente
 	go func() {
 		for {
-			time.Sleep(2 * time.Second)
+			time.Sleep(5 * time.Second)
 			go inimigoSpawnar(&jogo, damage_confirmation, lock)
 		}
 	}()
